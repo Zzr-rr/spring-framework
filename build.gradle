@@ -1,87 +1,97 @@
+// 插件 大部分插件使用apply false，表示在根项目声明但不立即使用。
+// 版本号被固定，确保构建的可重复性。
 plugins {
-	id 'io.freefair.aspectj' version '8.13.1' apply false
-	// kotlinVersion is managed in gradle.properties
-	id 'org.jetbrains.kotlin.plugin.serialization' version "${kotlinVersion}" apply false
-	id 'org.jetbrains.dokka'
-	id 'com.github.bjornvester.xjc' version '1.8.2' apply false
-	id 'com.gradleup.shadow' version "9.2.2" apply false
-	id 'me.champeau.jmh' version '0.7.2' apply false
-	id 'io.spring.nullability' version '0.0.4' apply false
+    id 'io.freefair.aspectj' version '8.13.1' apply false // AspectJ支持
+    // kotlinVersion is managed in gradle.properties
+    id 'org.jetbrains.kotlin.plugin.serialization' version "${kotlinVersion}" apply false // Kotlin序列化
+    id 'org.jetbrains.dokka' // Kotlin 文档生成
+    id 'com.github.bjornvester.xjc' version '1.8.2' apply false // XML Schema 编译
+    id 'com.gradleup.shadow' version "9.2.2" apply false // 胖 jar 打包
+    id 'me.champeau.jmh' version '0.7.2' apply false // Java 微基准测试
+    id 'io.spring.nullability' version '0.0.4' apply false // 空安全检查
 }
 
+// 项目分类
 ext {
-	moduleProjects = subprojects.findAll { it.name.startsWith("spring-") }
-	javaProjects = subprojects.findAll { !it.name.startsWith("framework-") }
+    moduleProjects = subprojects.findAll { it.name.startsWith("spring-") } // spring- 开头的模块
+    javaProjects = subprojects.findAll { !it.name.startsWith("framework-") } // 非 framework- 开头的项目
 }
 
 description = "Spring Framework"
 
 configure(allprojects) { project ->
-	apply plugin: "org.springframework.build.localdev"
-	group = "org.springframework"
-	repositories {
-		mavenCentral()
-		if (version.contains('-')) {
-			maven { url = "https://repo.spring.io/milestone" }
-		}
-		if (version.endsWith('-SNAPSHOT')) {
-			maven { url = "https://repo.spring.io/snapshot" }
-		}
-	}
-	configurations.all {
-		resolutionStrategy {
-			cacheChangingModulesFor 0, "seconds"
-			cacheDynamicVersionsFor 0, "seconds"
-		}
-	}
+    apply plugin: "org.springframework.build.localdev" // 自定义Spring开发的插件
+    group = "org.springframework" // 统一组名
+    repositories {
+        mavenCentral() // 主仓库
+        // 根据版本号条件添加特殊仓库
+        if (version.contains('-')) {
+            maven { url = "https://repo.spring.io/milestone" } // 里程碑版本
+        }
+        if (version.endsWith('-SNAPSHOT')) {
+            maven { url = "https://repo.spring.io/snapshot" } // 快照版本
+        }
+    }
+    configurations.all {
+        resolutionStrategy {
+            cacheChangingModulesFor 0, "seconds" // 不缓存动态版本
+            cacheDynamicVersionsFor 0, "seconds" // 不缓存变化模块
+        }
+    }
 }
 
 configure(allprojects - project(":framework-platform")) {
-	configurations {
-		dependencyManagement {
-			canBeConsumed = false
-			canBeResolved = false
-			visible = false
-		}
-		matching { it.name.endsWith("Classpath") }.all { it.extendsFrom(dependencyManagement) }
-	}
-	dependencies {
-		dependencyManagement(enforcedPlatform(dependencies.project(path: ":framework-platform")))
-	}
+    configurations {
+        dependencyManagement {
+            canBeConsumed = false
+            canBeResolved = false
+            visible = false
+        }
+        matching { it.name.endsWith("Classpath") }.all { it.extendsFrom(dependencyManagement) }
+    }
+    // 为所有项目（除framework-platform外）配置统一的依赖管理
+    dependencies {
+        dependencyManagement(enforcedPlatform(dependencies.project(path: ":framework-platform")))
+    }
 }
 
+// Java项目配置
 configure([rootProject] + javaProjects) { project ->
-	apply plugin: "java"
-	apply plugin: "java-test-fixtures"
-	apply plugin: 'org.springframework.build.conventions'
-	apply from: "${rootDir}/gradle/ide.gradle"
+    apply plugin: "java"
+    apply plugin: "java-test-fixtures" // 测试夹具支持
+    apply plugin: 'org.springframework.build.conventions' // Spring 构建约定
+    apply from: "${rootDir}/gradle/ide.gradle" // IDE 配置
 
-	dependencies {
-		testImplementation("org.junit.jupiter:junit-jupiter")
-		testImplementation("org.junit.platform:junit-platform-suite")
-		testImplementation("org.mockito:mockito-core")
-		testImplementation("org.mockito:mockito-junit-jupiter")
-		testImplementation("io.mockk:mockk")
-		testImplementation("org.assertj:assertj-core")
-		testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-		testRuntimeOnly("org.apache.logging.log4j:log4j-core")
-	}
+    // 统一的测试依赖
+    dependencies {
+        testImplementation("org.junit.jupiter:junit-jupiter") // Junit 5
+        testImplementation("org.junit.platform:junit-platform-suite") // 测试套件
+        testImplementation("org.mockito:mockito-core") // Mock 矿机
+        testImplementation("org.mockito:mockito-junit-jupiter") // Mockito JUnit 集成
+        testImplementation("io.mockk:mockk") // Kotlin Mock 框架
+        testImplementation("org.assertj:assertj-core") // 断言库
+        // 仅在运行时测试
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher") // 测试运行平台
+        testRuntimeOnly("org.apache.logging.log4j:log4j-core") // 日志实现
+    }
 
-	ext.javadocLinks = [
-			"https://docs.oracle.com/en/java/javase/17/docs/api/",
-			"https://jakarta.ee/specifications/platform/11/apidocs/",
-			"https://docs.hibernate.org/orm/5.6/javadocs/",
-			"https://www.quartz-scheduler.org/api/2.3.0/",
-			"https://hc.apache.org/httpcomponents-client-5.5.x/current/httpclient5/apidocs/",
-			"https://projectreactor.io/docs/test/release/api/",
-			"https://junit.org/junit4/javadoc/4.13.2/",
-			"https://docs.junit.org/6.0.0/api/",
-			"https://www.reactive-streams.org/reactive-streams-1.0.3-javadoc/",
-			"https://r2dbc.io/spec/1.0.0.RELEASE/api/",
-			"https://jspecify.dev/docs/api/"
-	] as String[]
+    // JavaDoc 链接配置
+    ext.javadocLinks = [
+            "https://docs.oracle.com/en/java/javase/17/docs/api/",
+            // "https://jakarta.ee/specifications/platform/11/apidocs/",
+            "https://docs.hibernate.org/orm/5.6/javadocs/",
+            "https://www.quartz-scheduler.org/api/2.3.0/",
+            "https://hc.apache.org/httpcomponents-client-5.5.x/current/httpclient5/apidocs/",
+            "https://projectreactor.io/docs/test/release/api/",
+            "https://junit.org/junit4/javadoc/4.13.2/",
+            "https://docs.junit.org/6.0.0/api/",
+            "https://www.reactive-streams.org/reactive-streams-1.0.3-javadoc/",
+            "https://r2dbc.io/spec/1.0.0.RELEASE/api/",
+            "https://jspecify.dev/docs/api/"
+    ] as String[]
 }
 
+// moduleProjects 的特殊配置
 configure(moduleProjects) { project ->
-	apply from: "${rootDir}/gradle/spring-module.gradle"
+    apply from: "${rootDir}/gradle/spring-module.gradle" // Spring 模块的特殊配置
 }
