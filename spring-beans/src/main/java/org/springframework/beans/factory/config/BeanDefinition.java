@@ -28,6 +28,9 @@ import org.springframework.core.ResolvableType;
  * constructor argument values, and further information supplied by
  * concrete implementations.
  *
+ * 一个BeanDefinition描述了一个Bean的实例的属性值、构造参数，以及根据不同的具体实现包含的
+ * 更多信息。
+ *
  * <p>This is just a minimal interface: The main intention is to allow a
  * {@link BeanFactoryPostProcessor} to introspect and modify property values
  * and other bean metadata.
@@ -184,6 +187,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
 	/**
 	 * Return whether this bean is a primary autowire candidate.
+	 * 用于判断Bean注入的优先级，当容器中存在多个相同类型的Bean时，通过@Primary标记的Bean会默认成为优先注入的候选者
 	 */
 	boolean isPrimary();
 
