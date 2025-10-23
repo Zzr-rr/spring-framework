@@ -113,7 +113,7 @@ public class AnnotationBeanNameGenerator implements BeanNameGenerator {
 				return beanName;
 			}
 		}
-		// 否则会生成一个新的默认名称
+		// 否则生成一个新的默认名称
 		return buildDefaultBeanName(definition, registry);
 	}
 
