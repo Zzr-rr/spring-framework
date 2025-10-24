@@ -10,6 +10,10 @@ public class Demo {
 		ApplicationContext context = new AnnotationConfigApplicationContext(Config.class);
 		A a = (A) context.getBean("a");
 		a.sayHello();
+		a.sayHello();
+
+
+		// C 是懒加载，在获取实例的时候会初始化
 		context.getBean("c", C.class);
 	}
 }
