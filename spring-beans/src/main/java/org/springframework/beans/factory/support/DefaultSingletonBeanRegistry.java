@@ -673,10 +673,12 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	}
 
 	private boolean isDependent(String beanName, String dependentBeanName, @Nullable Set<String> alreadySeen) {
+		// 排除已经检查的bean，避免循环递归
 		if (alreadySeen != null && alreadySeen.contains(beanName)) {
 			return false;
 		}
 		String canonicalName = canonicalName(beanName);
+		// dependentBeanMap 存储了每个bean的直接依赖项
 		Set<String> dependentBeans = this.dependentBeanMap.get(canonicalName);
 		if (dependentBeans == null || dependentBeans.isEmpty()) {
 			return false;
