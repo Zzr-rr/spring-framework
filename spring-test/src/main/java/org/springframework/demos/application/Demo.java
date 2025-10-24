@@ -12,5 +12,7 @@ public class Demo {
 		// 通过上下文中的内容获取相应的Bean实例，再调用相关方法。
 		User user = context.getBean("user", User.class);
 		user.sayHello();
+		// 获取bean的运行时类型
+		System.out.println(context.getBeanFactory().getType("user"));
 	}
 }
