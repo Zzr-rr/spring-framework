@@ -34,17 +34,21 @@ import org.springframework.util.Assert;
 
 /**
  * Utility class for handling registration of AOP auto-proxy creators.
+ * 用于处理注册AOP自动代理创建的工具类
  *
  * <p>Only a single auto-proxy creator should be registered yet multiple concrete
  * implementations are available. This class provides a simple escalation protocol,
  * allowing a caller to request a particular auto-proxy creator and know that creator,
  * <i>or a more capable variant thereof</i>, will be registered as a post-processor.
+ * <p>
+ * 虽然只应该注册一个自动代理创建器，但是这里有多个可用的变体实现。
+ * 这个类提供了一个简单的协议升级，允许调用者请求特定的自动代理创建器（或其变体）来注册为后处理器。
  *
  * @author Rob Harrop
  * @author Juergen Hoeller
  * @author Mark Fisher
- * @since 2.5
  * @see AopNamespaceUtils
+ * @since 2.5
  */
 public abstract class AopConfigUtils {
 
@@ -60,9 +64,11 @@ public abstract class AopConfigUtils {
 	private static final List<Class<?>> APC_PRIORITY_LIST = new ArrayList<>(3);
 
 	static {
-		// Set up the escalation list...
+		// 基础设施Advice的自动代理创建
 		APC_PRIORITY_LIST.add(InfrastructureAdvisorAutoProxyCreator.class);
+		// 在基础功能上扩展，支持AspectJ风格的切面定义
 		APC_PRIORITY_LIST.add(AspectJAwareAdvisorAutoProxyCreator.class);
+		// 优先级最高，支持注解驱动的AspectJ切面
 		APC_PRIORITY_LIST.add(AnnotationAwareAspectJAutoProxyCreator.class);
 	}
 

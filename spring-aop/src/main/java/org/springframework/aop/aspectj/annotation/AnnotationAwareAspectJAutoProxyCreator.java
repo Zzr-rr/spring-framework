@@ -31,39 +31,52 @@ import org.springframework.util.Assert;
 /**
  * {@link AspectJAwareAdvisorAutoProxyCreator} subclass that processes all AspectJ
  * annotation aspects in the current application context, as well as Spring Advisors.
+ * <p>
+ * 这个类处理所有在当前应用下的AspectJ风格的注解切面，比如Spring的Advisors
  *
  * <p>Any AspectJ annotated classes will automatically be recognized, and their
  * advice applied if Spring AOP's proxy-based model is capable of applying it.
  * This covers method execution joinpoints.
+ * <p>
+ * 所有的使用了AspectJ注解的类都将被自动识别，并且，如果Spring的AOP的基础代理模型能够应用，他们的advice都将被应用。
+ * 这包含了方法执行的切入点。
  *
  * <p>If the &lt;aop:include&gt; element is used, only @AspectJ beans with names matched by
  * an include pattern will be considered as defining aspects to use for Spring auto-proxying.
+ * <p>
+ * 如果使用了aop:include的元素，只有名称与该元素匹配的@AspecJ beans才会被包含。
+ * 一个包含模式将被视为定义了用于Spring自动代理的方面。
  *
  * <p>Processing of Spring Advisors follows the rules established in
  * {@link org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator}.
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
- * @since 2.0
  * @see org.springframework.aop.aspectj.annotation.AspectJAdvisorFactory
+ * @since 2.0
  */
 @SuppressWarnings("serial")
 public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorAutoProxyCreator {
 
+	/**
+	 * 该类继承自AspectJAwareAdvisorAutoProxyCreator，表明它是Spring AOP自动代理机制的一部分
+	 * 专门处理AspectJ风格的切面
+	 */
+
+	// 用于匹配符合条件的@AspectJ bean名称的正则表达式列表
 	private @Nullable List<Pattern> includePatterns;
 
+	// 用于创建AspectJ通知的工厂，同时作为容器，也可以把Bean统一管理起来，方便去进行扫描获取相应Bean
 	private @Nullable AspectJAdvisorFactory aspectJAdvisorFactory;
 
+	// 用于构建AspectJ通知的构造器
 	private @Nullable BeanFactoryAspectJAdvisorsBuilder aspectJAdvisorsBuilder;
 
-
-	/**
-	 * Set a list of regex patterns, matching eligible @AspectJ bean names.
-	 * <p>Default is to consider all @AspectJ beans as eligible.
-	 */
+	// 设置用于匹配@AspectJ bean名称的正则表达式列表
 	public void setIncludePatterns(List<String> patterns) {
 		this.includePatterns = new ArrayList<>(patterns.size());
 		for (String patternText : patterns) {
+			// 将字符串模式编译为Pattern对象并存储在includePatterns中
 			this.includePatterns.add(Pattern.compile(patternText));
 		}
 	}
@@ -73,6 +86,7 @@ public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorA
 		this.aspectJAdvisorFactory = aspectJAdvisorFactory;
 	}
 
+	// 设置Spring容器
 	@Override
 	protected void initBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		super.initBeanFactory(beanFactory);
@@ -83,18 +97,19 @@ public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorA
 				new BeanFactoryAspectJAdvisorsBuilderAdapter(beanFactory, this.aspectJAdvisorFactory);
 	}
 
-
+	// 查找候选的通知器（通知器封装了通知(Advice)和切点(Pointcut)的组合）
 	@Override
 	protected List<Advisor> findCandidateAdvisors() {
-		// Add all the Spring advisors found according to superclass rules.
+		// 根据超类的规则，将所有发现的advisors都加进去
 		List<Advisor> advisors = super.findCandidateAdvisors();
-		// Build Advisors for all AspectJ aspects in the bean factory.
+		// 为所有在当前bean工厂的AspectJ切面构建Advisors
 		if (this.aspectJAdvisorsBuilder != null) {
 			advisors.addAll(this.aspectJAdvisorsBuilder.buildAspectJAdvisors());
 		}
 		return advisors;
 	}
 
+	// 判断一个类是否是基础设施类
 	@Override
 	protected boolean isInfrastructureClass(Class<?> beanClass) {
 		// Previously we setProxyTargetClass(true) in the constructor, but that has too
@@ -109,17 +124,11 @@ public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorA
 				(this.aspectJAdvisorFactory != null && this.aspectJAdvisorFactory.isAspect(beanClass)));
 	}
 
-	/**
-	 * Check whether the given aspect bean is eligible for auto-proxying.
-	 * <p>If no &lt;aop:include&gt; elements were used then "includePatterns" will be
-	 * {@code null} and all beans are included. If "includePatterns" is non-null,
-	 * then one of the patterns must match.
-	 */
+	// 检查给定的切面bean是否符合自动代理条件
 	protected boolean isEligibleAspectBean(String beanName) {
 		if (this.includePatterns == null) {
 			return true;
-		}
-		else {
+		} else {
 			for (Pattern pattern : this.includePatterns) {
 				if (pattern.matcher(beanName).matches()) {
 					return true;
@@ -131,8 +140,9 @@ public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorA
 
 
 	/**
-	 * Subclass of BeanFactoryAspectJAdvisorsBuilderAdapter that delegates to
-	 * surrounding AnnotationAwareAspectJAutoProxyCreator facilities.
+	 * 这个内部类扩展了BeanFactoryAspectJAdvisorsBuilder，主要有两个作用：
+	 * 1. 委托给外部类的isEligibleAspectBean方法来判断bean是否符合条件
+	 * 2. 实现了模版方法模式，将eligibility判断逻辑委托给外部类
 	 */
 	private class BeanFactoryAspectJAdvisorsBuilderAdapter extends BeanFactoryAspectJAdvisorsBuilder {
 
