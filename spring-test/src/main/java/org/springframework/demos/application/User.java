@@ -7,7 +7,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class User implements InitializingBean, DisposableBean {
 	public void sayHello() {
-		System.out.println("Hello, I'm User");
+		System.out.println("[Say Hello] Hello, I'm User");
+	}
+
+	@Loggable
+	public void deleteUser() {
+		System.out.println("[Delete User] Delete User.");
 	}
 
 	@Override
